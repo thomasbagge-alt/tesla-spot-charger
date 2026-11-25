@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tesla spot charger - cheapest charging window in Finland</title>
   <meta name="description" content="Find the cheapest unbroken window to charge your Tesla with Finnish spot prices (pörssisähkö) so it reaches your target battery level by the time you leave.">
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#6b1226">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Charger">
@@ -14,133 +14,338 @@
   <link rel="manifest" href="manifest.webmanifest?v=2">
   <style>
     :root {
-      --bg: #f4f5f7;
-      --card: #ffffff;
-      --text: #1b1d22;
-      --muted: #5c6370;
-      --border: #d9dce3;
-      --accent: #0063a3;
-      --accent-text: #ffffff;
-      --bar: #aeb6c4;
-      --bar-chosen: #0063a3;
-      --warn-bg: #fff4d6;
-      --warn-text: #5c4300;
-      --err-bg: #fde4e4;
-      --err-text: #7a1212;
-      --ok-bg: #e2f4e6;
-      --ok-text: #14532d;
-      --radius: 12px;
-      color-scheme: light dark;
+      /* Midnight Cherry Red palette */
+      --cherry-primary: #7B1124;
+      --cherry-hover: #5E0C1B;
+      --cherry-bright: #9E1B32;
+      --cherry-tint: #FBF1F3;
+      --cherry-border: #EBC8CF;
+      --bg-page: #F6F5F7;
+      --bg-card: #FFFFFF;
+      --bg-tile: #F8FAFC;
+      --text-main: #18181B;
+      --text-muted: #64646E;
+      --bar-inactive: #C9C9D1;
+      --saving-green: #15803D;
+
+      /* Supporting tokens */
+      --line: #E6E4EA;
+      --track: #E4E2E8;
+      --warn-bg: #FFF6DD;
+      --warn-text: #5C4300;
+      --warn-border: #F0DDA0;
+      --err-bg: #FDEDED;
+      --err-text: #8A1C1C;
+      --err-border: #F2C4C4;
+      --radius-card: 16px;
+      --radius-tile: 12px;
+      --shadow-card: 0 1px 2px rgba(24, 24, 27, 0.04), 0 6px 20px rgba(24, 24, 27, 0.05);
+      --thumb: 22px;
+      color-scheme: light;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #14161a;
-        --card: #1e2128;
-        --text: #eceef2;
-        --muted: #a0a7b4;
-        --border: #343945;
-        --accent: #4aa3e0;
-        --accent-text: #0b1620;
-        --bar: #4a5262;
-        --bar-chosen: #4aa3e0;
-        --warn-bg: #3b3012;
-        --warn-text: #f5dc9a;
-        --err-bg: #3d1a1a;
-        --err-text: #f6b4b4;
-        --ok-bg: #12301c;
-        --ok-text: #a8e3b9;
-      }
-    }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg-page);
+      color: var(--text-main);
       font: 16px/1.5 "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-text-size-adjust: 100%;
     }
-    main { max-width: 720px; margin: 0 auto; padding: 1rem; display: grid; gap: 1rem; }
-    h1 { font-size: 1.6rem; margin: 0.5rem 0 0; }
-    h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+    main { max-width: 720px; margin: 0 auto; padding: 1.25rem 1rem 2rem; display: grid; gap: 1rem; }
+    h1 { font-size: 1.5rem; line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
+    h2, legend { font-size: 1.0625rem; font-weight: 700; margin: 0; padding: 0; }
     p { margin: 0; }
-    .lead, .muted { color: var(--muted); }
+    a { color: var(--cherry-primary); }
+    a:hover { color: var(--cherry-hover); }
+    .muted { color: var(--text-muted); }
     .small { font-size: 0.875rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    :focus-visible { outline: 2px solid var(--cherry-primary); outline-offset: 2px; }
+
+    /* ---------- Header ---------- */
+    .app-header { display: flex; gap: 0.85rem; align-items: center; padding: 0.25rem 0.25rem 0; }
+    .logo { flex: none; width: 44px; height: 44px; }
+    .lead { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.15rem; }
+
+    /* ---------- Cards ---------- */
     .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 1.1rem;
     }
-    fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 1rem; }
-    legend { font-weight: 600; font-size: 1.1rem; padding: 0; margin-bottom: 0.75rem; }
-    .field { display: grid; gap: 0.25rem; }
-    .field label { font-weight: 600; }
-    .pair { display: grid; grid-template-columns: 1fr 5.5rem; gap: 0.75rem; align-items: center; }
-    input[type="range"] { width: 100%; height: 2.75rem; accent-color: var(--accent); }
+    .card > h2 { margin-bottom: 0.9rem; }
+    .card > h2 .muted { font-weight: 400; font-size: 0.875rem; }
+    fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 1.1rem; min-width: 0; }
+    legend { margin-bottom: 0.9rem; }
+
+    /* ---------- Battery bar ---------- */
+    .battery-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.875rem; }
+    .battery-head .muted { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.75rem; }
+    .battery-head output { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .battery-track { display: flex; height: 14px; border-radius: 999px; background: var(--track); overflow: hidden; }
+    .battery-now { width: var(--now, 0%); background: var(--cherry-primary); transition: width 0.15s ease; }
+    .battery-add {
+      width: var(--add, 0%);
+      background: repeating-linear-gradient(45deg, var(--cherry-border) 0 5px, var(--cherry-tint) 5px 10px);
+      transition: width 0.15s ease;
+    }
+    .battery-key { display: flex; gap: 1rem; margin-top: 0.4rem; color: var(--text-muted); font-size: 0.8125rem; }
+    .dot { display: inline-block; width: 0.65rem; height: 0.65rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: -0.02rem; }
+    .dot.now { background: var(--cherry-primary); }
+    .dot.add { background: var(--cherry-border); }
+
+    /* ---------- Form fields ---------- */
+    .field { display: grid; gap: 0.3rem; }
+    .field label { font-weight: 600; font-size: 0.9375rem; }
+    .pair { display: grid; grid-template-columns: 1fr 5.5rem; gap: 0.9rem; align-items: center; }
     input[type="number"], input[type="time"] {
       width: 100%;
       min-height: 2.75rem;
-      padding: 0.4rem 0.6rem;
+      padding: 0.4rem 0.65rem;
       font: inherit;
-      color: var(--text);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-main);
+      background: var(--bg-card);
+      border: 1px solid #D4D2DA;
+      border-radius: 10px;
     }
-    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-    details summary { cursor: pointer; font-weight: 600; min-height: 2.75rem; display: flex; align-items: center; }
-    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
-    .banner { border-radius: 8px; padding: 0.75rem 1rem; }
-    .banner.warn { background: var(--warn-bg); color: var(--warn-text); }
-    .banner.err { background: var(--err-bg); color: var(--err-text); }
-    .banner.ok { background: var(--ok-bg); color: var(--ok-text); }
-    .banner + .banner, .banner + .times, .times + .stats { margin-top: 0.75rem; }
-    .times { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    .time-tile { border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem; display: grid; gap: 0.25rem; }
-    .time-tile .label { color: var(--muted); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-    .time-tile .value { font-size: 2.4rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
-    .time-tile .day { color: var(--muted); font-size: 0.875rem; }
-    button {
-      font: inherit;
-      font-weight: 600;
-      min-height: 2.75rem;
-      padding: 0.4rem 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+    input[type="number"]:hover, input[type="time"]:hover { border-color: var(--cherry-border); }
+    input[type="number"]:focus-visible, input[type="time"]:focus-visible {
+      outline: none;
+      border-color: var(--cherry-primary);
+      box-shadow: 0 0 0 3px var(--cherry-border);
+    }
+
+    /* ---------- Range sliders ---------- */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 2.75rem;
+      margin: 0;
       background: transparent;
-      color: var(--text);
+      cursor: pointer;
+      --p: 0;
+      --fill: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--p));
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(to right, var(--cherry-primary) var(--fill), var(--track) var(--fill));
+    }
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(to right, var(--cherry-primary) var(--fill), var(--track) var(--fill));
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: var(--thumb);
+      height: var(--thumb);
+      margin-top: calc((6px - var(--thumb)) / 2);
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 1px solid #CFCDD6;
+      box-shadow: 0 1px 4px rgba(24, 24, 27, 0.28);
+    }
+    input[type="range"]::-moz-range-thumb {
+      box-sizing: border-box;
+      width: var(--thumb);
+      height: var(--thumb);
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 1px solid #CFCDD6;
+      box-shadow: 0 1px 4px rgba(24, 24, 27, 0.28);
+    }
+    input[type="range"]:hover::-webkit-slider-thumb { border-color: var(--cherry-primary); }
+    input[type="range"]:hover::-moz-range-thumb { border-color: var(--cherry-primary); }
+    input[type="range"]:active::-webkit-slider-thumb { border-color: var(--cherry-hover); background: var(--cherry-tint); }
+    input[type="range"]:active::-moz-range-thumb { border-color: var(--cherry-hover); background: var(--cherry-tint); }
+    input[type="range"]:focus-visible { outline: none; }
+    input[type="range"]:focus-visible::-webkit-slider-thumb {
+      border-color: var(--cherry-primary);
+      box-shadow: 0 0 0 3px var(--cherry-border), 0 0 0 4px var(--cherry-primary);
+    }
+    input[type="range"]:focus-visible::-moz-range-thumb {
+      border-color: var(--cherry-primary);
+      box-shadow: 0 0 0 3px var(--cherry-border), 0 0 0 4px var(--cherry-primary);
+    }
+
+    /* ---------- Collapsible sections ---------- */
+    .disclosure > summary {
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.5rem;
+      padding: 0.3rem 0.85rem 0.3rem 0.7rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--bg-card);
+      color: var(--cherry-primary);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .disclosure > summary::-webkit-details-marker { display: none; }
+    .disclosure > summary::before { content: "\25B8"; font-size: 0.95em; line-height: 1; }
+    .disclosure[open] > summary::before { content: "\25BE"; }
+    .disclosure > summary:hover { background: var(--cherry-tint); border-color: var(--cherry-border); color: var(--cherry-hover); }
+    .disclosure > summary:active { color: var(--cherry-hover); background: var(--cherry-border); }
+    .disclosure-body { margin-top: 0.75rem; }
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.85rem; margin-top: 0.75rem; }
+
+    /* ---------- Result card ---------- */
+    #result { display: grid; gap: 0.9rem; }
+    .banner { border-radius: 12px; padding: 0.8rem 1rem; border: 1px solid transparent; }
+    .banner.summary { background: var(--cherry-tint); border-color: var(--cherry-border); color: var(--cherry-primary); font-weight: 700; }
+    .banner.warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+    .banner.err { background: var(--err-bg); border-color: var(--err-border); color: var(--err-text); }
+
+    .times { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.4rem; align-items: center; }
+    .arrow { color: var(--text-muted); font-size: 1.25rem; line-height: 1; }
+    .time-tile {
+      position: relative;
+      display: grid;
+      gap: 0.1rem;
+      padding: 0.7rem 0.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-tile);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .time-tile.copied { background: var(--cherry-tint); border-color: var(--cherry-border); }
+    .time-tile .label { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; min-height: 1.75rem; display: flex; align-items: center; }
+    .time-tile .value { font-size: clamp(1.7rem, 8vw, 2.3rem); font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .time-tile .day { color: var(--text-muted); font-size: 0.8125rem; }
+    .copy-btn {
+      position: absolute;
+      top: 0.45rem;
+      right: 0.45rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      min-height: 1.75rem;
+      padding: 0.15rem 0.5rem;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--cherry-primary);
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
       cursor: pointer;
     }
-    button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.5rem 1rem; margin: 0; }
-    .stats div { display: grid; }
-    .stats dt { color: var(--muted); font-size: 0.875rem; }
-    .stats dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .steps { margin: 0.75rem 0 0; padding-left: 1.25rem; }
-    .chart svg { width: 100%; height: auto; display: block; }
-    .chart .axis { fill: var(--muted); font-size: 11px; }
-    .chart .bar { fill: var(--bar); }
-    .chart .bar.chosen { fill: var(--bar-chosen); }
-    .chart .zero { stroke: var(--border); stroke-width: 1; }
-    .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; }
-    .swatch { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 2px; margin-right: 0.35rem; vertical-align: -0.1rem; }
-    .swatch.chosen { background: var(--bar-chosen); }
-    .swatch.other { background: var(--bar); }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    @media (max-width: 420px) {
-      .time-tile .value { font-size: 2rem; }
+    .copy-btn svg { width: 0.8rem; height: 0.8rem; flex: none; }
+    .copy-btn:hover { background: var(--cherry-tint); border-color: var(--cherry-border); color: var(--cherry-hover); }
+    .copy-btn:active { background: var(--cherry-border); color: var(--cherry-hover); }
+
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0; }
+    .metric { background: var(--bg-tile); border: 1px solid var(--line); border-radius: var(--radius-tile); padding: 0.7rem 0.8rem; display: grid; gap: 0.1rem; align-content: start; min-width: 0; }
+    .metric dt { color: var(--text-muted); font-size: 0.8125rem; line-height: 1.3; }
+    .metric dd { margin: 0; font-variant-numeric: tabular-nums; }
+    .metric .value { font-size: 1.25rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+    .metric .unit { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); }
+    .metric .sub { font-size: 0.8125rem; color: var(--text-muted); }
+    .metric .value.positive { color: var(--saving-green); }
+    .metric .value.na { color: var(--text-muted); font-weight: 600; }
+
+    .steps { margin: 0; padding-left: 1.25rem; display: grid; gap: 0.4rem; font-size: 0.9rem; }
+
+    button.primary {
+      font: inherit; font-weight: 600; min-height: 2.75rem; padding: 0.4rem 1.1rem;
+      border-radius: 10px; border: 1px solid var(--cherry-primary);
+      background: var(--cherry-primary); color: #FFFFFF; cursor: pointer;
+    }
+    button.primary:hover, button.primary:active { background: var(--cherry-hover); border-color: var(--cherry-hover); }
+
+    /* ---------- Chart ---------- */
+    .chart-wrap { position: relative; }
+    .chart-wrap svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+    .chart .axis { fill: var(--text-muted); font-size: 11px; }
+    .chart .stop-top { stop-color: var(--cherry-bright); }
+    .chart .stop-bottom { stop-color: var(--cherry-primary); }
+    .chart .bar { fill: var(--bar-inactive); }
+    .chart .bar.chosen { fill: url(#chosenGradient); }
+    .chart .bar.active { stroke: var(--cherry-hover); stroke-width: 1.5; }
+    .chart .zero { stroke: var(--line); stroke-width: 1; }
+    .chart .avg-line { stroke: var(--text-main); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.6; pointer-events: none; }
+    .chart .avg-label { fill: var(--text-main); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--bg-card); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+    .tooltip {
+      position: absolute;
+      z-index: 2;
+      pointer-events: none;
+      transform: translateX(-50%);
+      padding: 0.4rem 0.65rem;
+      border-radius: 8px;
+      background: var(--text-main);
+      color: #FFFFFF;
+      font-size: 0.8125rem;
+      line-height: 1.35;
+      white-space: nowrap;
+      box-shadow: 0 6px 18px rgba(24, 24, 27, 0.28);
+    }
+    .tooltip .tip-time { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .tooltip .tip-price { font-variant-numeric: tabular-nums; }
+    .tooltip .tip-note { color: var(--cherry-border); font-size: 0.75rem; }
+    .legend { display: flex; gap: 0.5rem 1rem; flex-wrap: wrap; margin-top: 0.7rem; color: var(--text-muted); font-size: 0.8125rem; }
+    .legend[hidden], .legend [hidden] { display: none; }
+    .swatch { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 3px 3px 0 0; margin-right: 0.35rem; vertical-align: -0.1rem; }
+    .swatch.chosen { background: linear-gradient(to bottom, var(--cherry-bright), var(--cherry-primary)); }
+    .swatch.other { background: var(--bar-inactive); }
+    .swatch.avg { height: 0; width: 1rem; border-top: 2px dashed var(--text-main); border-radius: 0; opacity: 0.6; vertical-align: 0.2rem; }
+
+    footer { padding: 0 0.25rem; display: grid; gap: 0.35rem; }
+
+    @media (max-width: 400px) {
+      .copy-btn .copy-label { display: none; }
+      .copy-btn.is-copied .copy-label { display: inline; }
+      .copy-btn.is-copied svg { display: none; }
     }
   </style>
 </head>
 <body>
   <main>
-    <header>
-      <h1>Tesla spot charger</h1>
-      <p class="lead">Finds the cheapest unbroken charging window from now until you leave, using Finnish 15-minute spot prices (incl. 25.5% VAT).</p>
+    <header class="app-header">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="logoGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#9E1B32"></stop>
+            <stop offset="1" stop-color="#5E0C1B"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="40" height="40" rx="10" fill="url(#logoGradient)"></rect>
+        <polygon points="22.4,3.2 27.6,3.2 23.6,16 30,16 15.2,37.2 17.6,23.2 10.8,23.2" fill="#FFFFFF"></polygon>
+      </svg>
+      <div>
+        <h1>Tesla spot charger</h1>
+        <p class="lead">Cheapest unbroken charging window from now until you leave, using Finnish 15-minute spot prices (incl. 25.5% VAT).</p>
+      </div>
     </header>
 
     <form id="form" class="card" autocomplete="off" novalidate>
       <fieldset>
         <legend>Battery and departure</legend>
+
+        <div class="battery">
+          <div class="battery-head">
+            <span class="muted">Battery</span>
+            <output id="battery-text" for="current target">35% now, 80% target</output>
+          </div>
+          <div class="battery-track" id="battery" role="img" aria-label="Battery at 35 percent, charging to 80 percent">
+            <div class="battery-now"></div>
+            <div class="battery-add"></div>
+          </div>
+          <div class="battery-key" aria-hidden="true">
+            <span><span class="dot now"></span>Current charge</span>
+            <span><span class="dot add"></span>To be added</span>
+          </div>
+        </div>
 
         <div class="field">
           <label for="current">Current battery (%)</label>
@@ -163,30 +368,30 @@
           <input id="ready" type="time" value="07:00" required>
           <span class="muted small" id="ready-hint"></span>
         </div>
-      </fieldset>
 
-      <details>
-        <summary>Car settings</summary>
-        <p class="muted small">Defaults match a Model Y Long Range with an 11 kW 3-phase home charger.</p>
-        <div class="settings-grid">
-          <div class="field">
-            <label for="capacity">Usable battery (kWh)</label>
-            <input id="capacity" type="number" inputmode="decimal" min="10" max="150" step="0.5" value="75">
+        <details class="disclosure">
+          <summary>Car settings</summary>
+          <p class="muted small disclosure-body">Defaults match a Model Y Long Range with an 11 kW 3-phase home charger.</p>
+          <div class="settings-grid">
+            <div class="field">
+              <label for="capacity">Usable battery (kWh)</label>
+              <input id="capacity" type="number" inputmode="decimal" min="10" max="150" step="0.5" value="75">
+            </div>
+            <div class="field">
+              <label for="charger">Charger power (kW)</label>
+              <input id="charger" type="number" inputmode="decimal" min="1" max="22" step="0.1" value="11">
+            </div>
+            <div class="field">
+              <label for="efficiency">Charging efficiency (%)</label>
+              <input id="efficiency" type="number" inputmode="decimal" min="50" max="100" step="1" value="90">
+            </div>
+            <div class="field">
+              <label for="margin">Supplier margin (snt/kWh)</label>
+              <input id="margin" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="0">
+            </div>
           </div>
-          <div class="field">
-            <label for="charger">Charger power (kW)</label>
-            <input id="charger" type="number" inputmode="decimal" min="1" max="22" step="0.1" value="11">
-          </div>
-          <div class="field">
-            <label for="efficiency">Charging efficiency (%)</label>
-            <input id="efficiency" type="number" inputmode="decimal" min="50" max="100" step="1" value="90">
-          </div>
-          <div class="field">
-            <label for="margin">Supplier margin (snt/kWh)</label>
-            <input id="margin" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="0">
-          </div>
-        </div>
-      </details>
+        </details>
+      </fieldset>
     </form>
 
     <section class="card" aria-labelledby="result-title">
@@ -195,11 +400,12 @@
     </section>
 
     <section class="card chart" aria-labelledby="chart-title">
-      <h2 id="chart-title">Prices until you leave (snt/kWh)</h2>
+      <h2 id="chart-title">Prices until you leave <span class="muted">(snt/kWh)</span></h2>
       <div id="chart"><p class="muted">No data yet.</p></div>
-      <div class="legend small muted" id="chart-legend" hidden>
-        <span><span class="swatch chosen"></span>Chosen window</span>
+      <div class="legend" id="chart-legend" hidden>
+        <span id="legend-chosen"><span class="swatch chosen"></span>Chosen window</span>
         <span><span class="swatch other"></span>Other quarter-hours</span>
+        <span><span class="swatch avg"></span>Average until departure</span>
       </div>
     </section>
 
@@ -412,6 +618,7 @@
       let prices = null;
       let loadError = null;
       let loading = true;
+      let lastPlan = null;
 
       // ---------- persistence ----------
       function saveSettings() {
@@ -463,17 +670,54 @@
         return null;
       }
 
+      // ---------- battery bar and slider fill ----------
+      function updateVisuals() {
+        const clamp = (v) => (Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 0);
+        const cur = clamp(parseFloat($('current').value));
+        const tgt = clamp(parseFloat($('target').value));
+        // The slider fill is drawn from a 0..1 position so it lines up with the thumb centre.
+        $('current-range').style.setProperty('--p', String(cur / 100));
+        $('target-range').style.setProperty('--p', String(Math.max(0, tgt - 1) / 99));
+
+        const add = Math.max(0, tgt - cur);
+        const bar = $('battery');
+        bar.style.setProperty('--now', cur + '%');
+        bar.style.setProperty('--add', add + '%');
+        const reached = tgt <= cur;
+        $('battery-text').textContent = reached
+          ? cur + '% now, already at target'
+          : cur + '% now, ' + tgt + '% target (+' + add + '%)';
+        bar.setAttribute('aria-label', reached
+          ? 'Battery at ' + cur + ' percent, already at the ' + tgt + ' percent target'
+          : 'Battery at ' + cur + ' percent, charging to ' + tgt + ' percent');
+      }
+
       // ---------- rendering ----------
       function banner(kind, html) { return '<div class="banner ' + kind + '">' + html + '</div>'; }
 
+      const COPY_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+        '<rect x="5.5" y="5.5" width="8" height="8" rx="1.6"></rect><path d="M10.5 5.5V3.6a1.6 1.6 0 0 0-1.6-1.6H3.6A1.6 1.6 0 0 0 2 3.6v5.3a1.6 1.6 0 0 0 1.6 1.6h1.9"></path></svg>';
+
       function timeTile(label, ms, nowMs, copyId) {
         const t = Charger.formatTime(ms);
+        const lower = label.toLowerCase();
         return '<div class="time-tile">' +
           '<span class="label">' + label + '</span>' +
+          '<button type="button" class="copy-btn" data-copy="' + t + '" data-label="' + lower + '" aria-label="Copy ' + lower + ' time ' + t + '">' +
+            COPY_ICON + '<span class="copy-label">Copy</span></button>' +
           '<span class="value" id="' + copyId + '">' + t + '</span>' +
           '<span class="day">' + esc(Charger.formatDay(ms, nowMs)) + '</span>' +
-          '<button type="button" data-copy="' + t + '" data-label="' + label.toLowerCase() + '">Copy ' + label.toLowerCase() + '</button>' +
           '</div>';
+      }
+
+      function metric(label, valueHtml, subHtml) {
+        return '<div class="metric"><dt>' + label + '</dt><dd>' + valueHtml + '</dd>' +
+          (subHtml ? '<dd class="sub">' + subHtml + '</dd>' : '') + '</div>';
+      }
+      function eurValue(v, positiveIsGreen) {
+        if (v === null) return '<span class="value na">Not available</span>';
+        const green = positiveIsGreen && Math.round(v * 100) > 0;
+        return '<span class="value' + (green ? ' positive' : '') + '">' + fmt(v) + ' <span class="unit">EUR</span></span>';
       }
 
       function render() {
@@ -496,7 +740,7 @@
         $('ready-hint').textContent = 'Next ' + Charger.formatTime(readyByMs) + ' (' + Charger.formatDay(readyByMs, nowMs) + ')';
 
         if (inputs.target <= inputs.current) {
-          result.innerHTML = banner('ok', '<strong>No charging needed.</strong> The battery is already at or above the ' + inputs.target + '% target.');
+          result.innerHTML = banner('summary', '<strong>No charging needed.</strong> The battery is already at or above the ' + inputs.target + '% target.');
           renderChart(null);
           return;
         }
@@ -533,67 +777,98 @@
             'You need about ' + fmtDuration(need.hours) + ' of charging, but only ' + fmtDuration(plan.maxSlots * 0.25) + ' of priced time is available. ' +
             'Charging for all of it gets you to about ' + Math.floor(reach) + '%.');
         } else {
-          html += banner('ok', 'Charge <strong>' + inputs.current + '% to ' + inputs.target + '%</strong> in about ' + fmtDuration(need.hours) +
+          html += banner('summary', 'Charge <strong>' + inputs.current + '% to ' + inputs.target + '%</strong> in about ' + fmtDuration(need.hours) +
             ' (' + fmt(need.kwhGrid, 1) + ' kWh from the grid, ' + need.slots + ' quarter-hours).');
         }
 
         html += '<div class="times">' +
           timeTile('Start', plan.startMs, nowMs, 'start-time') +
+          '<span class="arrow" aria-hidden="true">\u2192</span>' +
           timeTile('End', plan.endMs, nowMs, 'end-time') +
           '</div>';
 
         const energyForCost = plan.status === 'ok' ? need.kwhGrid : Math.min(need.kwhGrid, plan.window.length * need.kwhPerSlot);
         const costEur = (energyForCost * (plan.avgPrice + inputs.margin)) / 100;
-        let stats = '<div><dt>Average price</dt><dd>' + fmt(plan.avgPrice) + ' snt/kWh</dd></div>' +
-          '<div><dt>Estimated cost</dt><dd>' + fmt(costEur) + ' EUR</dd></div>' +
-          '<div><dt>Window vs average until departure</dt><dd>' + fmt(plan.avgPrice) + ' vs ' + fmt(plan.allAvg) + ' snt/kWh</dd></div>';
-        if (plan.status === 'ok') {
-          const vsAvg = ((plan.allAvg - plan.avgPrice) * need.kwhGrid) / 100;
-          stats += '<div><dt>Saving vs average price</dt><dd>' + fmt(vsAvg) + ' EUR</dd></div>';
-          if (plan.immediateAvg !== null) {
-            const vsNow = ((plan.immediateAvg - plan.avgPrice) * need.kwhGrid) / 100;
-            stats += '<div><dt>Saving vs charging right away</dt><dd>' + fmt(vsNow) + ' EUR</dd></div>';
-          }
-        }
-        html += '<dl class="stats">' + stats + '</dl>';
+        const vsAvg = plan.status === 'ok' ? ((plan.allAvg - plan.avgPrice) * need.kwhGrid) / 100 : null;
+        const vsNow = plan.status === 'ok' && plan.immediateAvg !== null
+          ? ((plan.immediateAvg - plan.avgPrice) * need.kwhGrid) / 100
+          : null;
 
-        html += '<ol class="steps small">' +
+        html += '<dl class="metrics">' +
+          metric('Estimated cost', eurValue(costEur, false)) +
+          metric('Window average price',
+            '<span class="value">' + fmt(plan.avgPrice) + ' <span class="unit">snt/kWh</span></span>',
+            'vs ' + fmt(plan.allAvg) + ' avg') +
+          metric('Saving vs average price', eurValue(vsAvg, true)) +
+          metric('Saving vs charging right away', eurValue(vsNow, true)) +
+          '</dl>';
+
+        html += '<details class="disclosure">' +
+          '<summary>How to schedule in the Tesla app</summary>' +
+          '<ol class="steps disclosure-body">' +
           '<li>In the Tesla app open <strong>Charging</strong> and then <strong>Schedule</strong>.</li>' +
           '<li>Turn on scheduled charging and set the start time to <strong>' + Charger.formatTime(plan.startMs) + '</strong> and the end time to <strong>' + Charger.formatTime(plan.endMs) + '</strong>.</li>' +
           '<li>Set the charge limit to <strong>' + inputs.target + '%</strong> so the car stops at the target even if the window runs a little long.</li>' +
-          '</ol>';
+          '</ol></details>';
 
+        // Keep the how-to section open across the periodic refresh.
+        const wasOpen = !!result.querySelector('details.disclosure[open]');
         result.innerHTML = html;
+        if (wasOpen) { const d = result.querySelector('details.disclosure'); if (d) d.open = true; }
         renderChart(plan);
       }
 
+      // ---------- chart ----------
+      const CHART_H = 190;
+      const CHART_TOP = 10;
+      const CHART_BOTTOM = 24;
+      let chartGeom = null;
+      let activeIdx = -1;
+
+      function barPath(x, w, yBase, yVal, radius) {
+        const up = yVal <= yBase;
+        const h = Math.max(1, Math.abs(yBase - yVal));
+        const yv = up ? yBase - h : yBase + h;
+        const r = Math.max(0, Math.min(radius, w / 2, h));
+        const x2 = x + w;
+        if (up) {
+          return 'M' + x + ',' + yBase + 'V' + (yv + r) + 'Q' + x + ',' + yv + ' ' + (x + r) + ',' + yv +
+            'H' + (x2 - r) + 'Q' + x2 + ',' + yv + ' ' + x2 + ',' + (yv + r) + 'V' + yBase + 'Z';
+        }
+        return 'M' + x + ',' + yBase + 'V' + (yv - r) + 'Q' + x + ',' + yv + ' ' + (x + r) + ',' + yv +
+          'H' + (x2 - r) + 'Q' + x2 + ',' + yv + ' ' + x2 + ',' + (yv - r) + 'V' + yBase + 'Z';
+      }
+
       function renderChart(plan) {
+        lastPlan = plan;
+        activeIdx = -1;
         const el = $('chart');
         const legend = $('chart-legend');
         if (!plan || !plan.candidates || plan.candidates.length === 0) {
+          chartGeom = null;
           el.innerHTML = '<p class="muted">Nothing to show yet.</p>';
           legend.hidden = true;
           return;
         }
         const slots = plan.candidates;
         const chosen = new Set((plan.window || []).map((s) => s.start));
-        const W = 600, H = 150, top = 16, bottom = 22, left = 0;
-        const innerH = H - top - bottom;
+        const W = Math.max(260, Math.round(el.clientWidth || 600));
+        const H = CHART_H;
+        const innerH = H - CHART_TOP - CHART_BOTTOM;
         const vals = slots.map((s) => s.price);
         const lo = Math.min(0, ...vals);
         const hi = Math.max(0.1, ...vals);
-        const y = (v) => top + ((hi - v) / (hi - lo)) * innerH;
+        const y = (v) => CHART_TOP + ((hi - v) / (hi - lo)) * innerH;
         const y0 = y(0);
-        const bw = (W - left) / slots.length;
-        let svg = '';
+        const bw = W / slots.length;
+        const gap = bw >= 6 ? 2 : bw >= 3 ? 1 : 0;
+        const barW = Math.max(1, bw - gap);
+
+        let svg = '<defs><linearGradient id="chosenGradient" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop class="stop-top" offset="0"></stop><stop class="stop-bottom" offset="1"></stop></linearGradient></defs>';
         slots.forEach((s, i) => {
-          const yy = y(s.price);
-          const h = Math.max(1, Math.abs(yy - y0));
-          const yTop = Math.min(yy, y0);
           const cls = chosen.has(s.start) ? 'bar chosen' : 'bar';
-          svg += '<rect class="' + cls + '" x="' + (left + i * bw + 0.5).toFixed(2) + '" y="' + yTop.toFixed(2) +
-            '" width="' + Math.max(1, bw - 1).toFixed(2) + '" height="' + h.toFixed(2) + '"><title>' +
-            Charger.formatTime(s.start) + ': ' + fmt(s.price) + ' snt/kWh</title></rect>';
+          svg += '<path class="' + cls + '" d="' + barPath(+(i * bw + gap / 2).toFixed(2), +barW.toFixed(2), +y0.toFixed(2), +y(s.price).toFixed(2), 3) + '"></path>';
         });
         svg += '<line class="zero" x1="0" x2="' + W + '" y1="' + y0.toFixed(2) + '" y2="' + y0.toFixed(2) + '"></line>';
 
@@ -602,18 +877,79 @@
         slots.forEach((s, i) => {
           const z = Charger.zoned(s.start);
           if (z.minute === 0 && z.hour % step === 0) {
-            svg += '<text class="axis" x="' + (left + i * bw).toFixed(2) + '" y="' + (H - 6) + '">' + Charger.formatTime(s.start) + '</text>';
+            const x = Math.min(W - 30, i * bw);
+            svg += '<text class="axis" x="' + x.toFixed(2) + '" y="' + (H - 7) + '">' + Charger.formatTime(s.start) + '</text>';
           }
         });
-        svg += '<text class="axis" x="0" y="11">max ' + fmt(Math.max(...vals)) + '</text>';
+
+        // Dashed reference line: average price until departure.
+        if (plan.allAvg !== null && Number.isFinite(plan.allAvg)) {
+          const ya = y(plan.allAvg);
+          const labelY = ya - 5 < 12 ? ya + 14 : ya - 5;
+          svg += '<line class="avg-line" x1="0" x2="' + W + '" y1="' + ya.toFixed(2) + '" y2="' + ya.toFixed(2) + '"></line>' +
+            '<text class="avg-label" x="' + (W - 4) + '" y="' + labelY.toFixed(2) + '" text-anchor="end">avg ' + fmt(plan.allAvg) + '</text>';
+        }
 
         const winText = plan.window && plan.window.length
           ? ' Chosen window ' + Charger.formatTime(plan.startMs) + ' to ' + Charger.formatTime(plan.endMs) + '.'
           : '';
         const label = 'Bar chart of ' + slots.length + ' quarter-hour prices from ' + Charger.formatTime(slots[0].start) +
-          ' to ' + Charger.formatTime(slots[slots.length - 1].start + Charger.SLOT_MS) + ', ranging ' + fmt(Math.min(...vals)) + ' to ' + fmt(Math.max(...vals)) + ' snt/kWh.' + winText;
-        el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">' + svg + '</svg>';
-        legend.hidden = !(plan.window && plan.window.length);
+          ' to ' + Charger.formatTime(slots[slots.length - 1].start + Charger.SLOT_MS) + ', ranging ' + fmt(Math.min(...vals)) + ' to ' + fmt(Math.max(...vals)) +
+          ' snt/kWh. Average ' + fmt(plan.allAvg) + '.' + winText;
+
+        el.innerHTML = '<div class="chart-wrap">' +
+          '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + esc(label) + '">' + svg + '</svg>' +
+          '<div class="tooltip" id="chart-tip" hidden></div></div>';
+        chartGeom = { W, H, bw, n: slots.length, y, y0, slots, chosen, nowMs: Date.now() };
+        legend.hidden = false;
+        $('legend-chosen').hidden = !(plan.window && plan.window.length);
+      }
+
+      function hideTip() {
+        const tip = $('chart-tip');
+        if (tip) tip.hidden = true;
+        document.querySelectorAll('#chart path.bar.active').forEach((p) => p.classList.remove('active'));
+        activeIdx = -1;
+      }
+
+      function showTip(idx) {
+        if (!chartGeom) return;
+        const g = chartGeom;
+        idx = Math.max(0, Math.min(g.n - 1, idx));
+        const tip = $('chart-tip');
+        const svg = document.querySelector('#chart svg');
+        if (!tip || !svg) return;
+        if (idx !== activeIdx) {
+          document.querySelectorAll('#chart path.bar.active').forEach((p) => p.classList.remove('active'));
+          const bars = svg.querySelectorAll('path.bar');
+          if (bars[idx]) bars[idx].classList.add('active');
+          activeIdx = idx;
+        }
+        const s = g.slots[idx];
+        const day = Charger.formatDay(s.start, g.nowMs);
+        const dayText = day === 'today' ? '' : esc(day) + ' ';
+        tip.innerHTML = '<div class="tip-time">' + dayText + Charger.formatTime(s.start) + ' \u2013 ' + Charger.formatTime(s.start + Charger.SLOT_MS) + '</div>' +
+          '<div class="tip-price">' + fmt(s.price) + ' snt/kWh</div>' +
+          (g.chosen.has(s.start) ? '<div class="tip-note">In chosen window</div>' : '');
+        tip.hidden = false;
+        const wrapW = svg.getBoundingClientRect().width || g.W;
+        const scale = wrapW / g.W;
+        const cx = (idx * g.bw + g.bw / 2) * scale;
+        const tw = tip.offsetWidth;
+        const th = tip.offsetHeight;
+        const center = Math.min(Math.max(cx, tw / 2), wrapW - tw / 2);
+        const barTop = Math.min(g.y(s.price), g.y0) * scale;
+        tip.style.left = center.toFixed(1) + 'px';
+        tip.style.top = Math.max(0, barTop - th - 6).toFixed(1) + 'px';
+      }
+
+      function tipFromPointer(e) {
+        const svg = document.querySelector('#chart svg');
+        if (!svg || !chartGeom) return;
+        const r = svg.getBoundingClientRect();
+        if (r.width === 0) return;
+        const idx = Math.floor(((e.clientX - r.left) / r.width) * chartGeom.n);
+        showTip(idx);
       }
 
       // ---------- data ----------
@@ -656,13 +992,14 @@
           onChange();
         });
       }
-      function onChange() { saveSettings(); if (prices || loadError) render(); }
+      function onChange() { saveSettings(); updateVisuals(); if (prices || loadError) render(); }
 
       loadSettings();
       link('current', 'current-range');
       link('target', 'target-range');
       for (const f of ['ready', 'capacity', 'charger', 'efficiency', 'margin']) $(f).addEventListener('input', onChange);
       $('form').addEventListener('submit', (e) => e.preventDefault());
+      updateVisuals();
 
       $('result').addEventListener('click', async (e) => {
         const btn = e.target.closest('button');
@@ -678,6 +1015,33 @@
           ta.remove();
         }
         $('copy-status').textContent = ok ? 'Copied ' + btn.dataset.label + ' time ' + text : 'Copy failed. Select the time manually.';
+        if (ok) {
+          const tile = btn.closest('.time-tile');
+          const lbl = btn.querySelector('.copy-label');
+          if (lbl) lbl.textContent = 'Copied!';
+          btn.classList.add('is-copied');
+          if (tile) tile.classList.add('copied');
+          clearTimeout(btn._copyTimer);
+          btn._copyTimer = setTimeout(() => {
+            if (lbl) lbl.textContent = 'Copy';
+            btn.classList.remove('is-copied');
+            if (tile) tile.classList.remove('copied');
+          }, 1500);
+        }
+      });
+
+      // Chart tooltip: hover on desktop, tap on touch screens.
+      const chartEl = $('chart');
+      chartEl.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') tipFromPointer(e); });
+      chartEl.addEventListener('pointerdown', (e) => tipFromPointer(e));
+      chartEl.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') hideTip(); });
+      document.addEventListener('pointerdown', (e) => { if (!chartEl.contains(e.target)) hideTip(); });
+
+      // Re-draw the chart at the new width so bars keep true pixel radii.
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => { if (lastPlan) renderChart(lastPlan); }, 150);
       });
 
       // Keep "now" fresh so the plan never starts in the past.
