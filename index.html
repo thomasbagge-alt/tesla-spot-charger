@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tesla spot charger - cheapest charging window in Finland</title>
+  <meta name="description" content="Find the cheapest unbroken window to charge your Tesla with Finnish spot prices (pörssisähkö) so it reaches your target battery level by the time you leave.">
+  <meta name="color-scheme" content="light dark">
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --text: #1b1d22;
+      --muted: #5c6370;
+      --border: #d9dce3;
+      --accent: #0063a3;
+      --accent-text: #ffffff;
+      --bar: #aeb6c4;
+      --bar-chosen: #0063a3;
+      --warn-bg: #fff4d6;
+      --warn-text: #5c4300;
+      --err-bg: #fde4e4;
+      --err-text: #7a1212;
+      --ok-bg: #e2f4e6;
+      --ok-text: #14532d;
+      --radius: 12px;
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14161a;
+        --card: #1e2128;
+        --text: #eceef2;
+        --muted: #a0a7b4;
+        --border: #343945;
+        --accent: #4aa3e0;
+        --accent-text: #0b1620;
+        --bar: #4a5262;
+        --bar-chosen: #4aa3e0;
+        --warn-bg: #3b3012;
+        --warn-text: #f5dc9a;
+        --err-bg: #3d1a1a;
+        --err-text: #f6b4b4;
+        --ok-bg: #12301c;
+        --ok-text: #a8e3b9;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 1rem; display: grid; gap: 1rem; }
+    h1 { font-size: 1.6rem; margin: 0.5rem 0 0; }
+    h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+    p { margin: 0; }
+    .lead, .muted { color: var(--muted); }
+    .small { font-size: 0.875rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 1rem; }
+    legend { font-weight: 600; font-size: 1.1rem; padding: 0; margin-bottom: 0.75rem; }
+    .field { display: grid; gap: 0.25rem; }
+    .field label { font-weight: 600; }
+    .pair { display: grid; grid-template-columns: 1fr 5.5rem; gap: 0.75rem; align-items: center; }
+    input[type="range"] { width: 100%; height: 2.75rem; accent-color: var(--accent); }
+    input[type="number"], input[type="time"] {
+      width: 100%;
+      min-height: 2.75rem;
+      padding: 0.4rem 0.6rem;
+      font: inherit;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    details summary { cursor: pointer; font-weight: 600; min-height: 2.75rem; display: flex; align-items: center; }
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
+    .banner { border-radius: 8px; padding: 0.75rem 1rem; }
+    .banner.warn { background: var(--warn-bg); color: var(--warn-text); }
+    .banner.err { background: var(--err-bg); color: var(--err-text); }
+    .banner.ok { background: var(--ok-bg); color: var(--ok-text); }
+    .banner + .banner, .banner + .times, .times + .stats { margin-top: 0.75rem; }
+    .times { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .time-tile { border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem; display: grid; gap: 0.25rem; }
+    .time-tile .label { color: var(--muted); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .time-tile .value { font-size: 2.4rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .time-tile .day { color: var(--muted); font-size: 0.875rem; }
+    button {
+      font: inherit;
+      font-weight: 600;
+      min-height: 2.75rem;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.5rem 1rem; margin: 0; }
+    .stats div { display: grid; }
+    .stats dt { color: var(--muted); font-size: 0.875rem; }
+    .stats dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .steps { margin: 0.75rem 0 0; padding-left: 1.25rem; }
+    .chart svg { width: 100%; height: auto; display: block; }
+    .chart .axis { fill: var(--muted); font-size: 11px; }
+    .chart .bar { fill: var(--bar); }
+    .chart .bar.chosen { fill: var(--bar-chosen); }
+    .chart .zero { stroke: var(--border); stroke-width: 1; }
+    .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .swatch { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 2px; margin-right: 0.35rem; vertical-align: -0.1rem; }
+    .swatch.chosen { background: var(--bar-chosen); }
+    .swatch.other { background: var(--bar); }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    @media (max-width: 420px) {
+      .time-tile .value { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Tesla spot charger</h1>
+      <p class="lead">Finds the cheapest unbroken charging window from now until you leave, using Finnish 15-minute spot prices (incl. 25.5% VAT).</p>
+    </header>
+
+    <form id="form" class="card" autocomplete="off" novalidate>
+      <fieldset>
+        <legend>Battery and departure</legend>
+
+        <div class="field">
+          <label for="current">Current battery (%)</label>
+          <div class="pair">
+            <input id="current-range" type="range" min="0" max="100" step="1" value="35" aria-label="Current battery percent, slider">
+            <input id="current" type="number" inputmode="numeric" min="0" max="100" step="1" value="35">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="target">Target battery (%)</label>
+          <div class="pair">
+            <input id="target-range" type="range" min="1" max="100" step="1" value="80" aria-label="Target battery percent, slider">
+            <input id="target" type="number" inputmode="numeric" min="1" max="100" step="1" value="80">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="ready">Ready by</label>
+          <input id="ready" type="time" value="07:00" required>
+          <span class="muted small" id="ready-hint"></span>
+        </div>
+      </fieldset>
+
+      <details>
+        <summary>Car settings</summary>
+        <p class="muted small">Defaults match a Model Y Long Range with an 11 kW 3-phase home charger.</p>
+        <div class="settings-grid">
+          <div class="field">
+            <label for="capacity">Usable battery (kWh)</label>
+            <input id="capacity" type="number" inputmode="decimal" min="10" max="150" step="0.5" value="75">
+          </div>
+          <div class="field">
+            <label for="charger">Charger power (kW)</label>
+            <input id="charger" type="number" inputmode="decimal" min="1" max="22" step="0.1" value="11">
+          </div>
+          <div class="field">
+            <label for="efficiency">Charging efficiency (%)</label>
+            <input id="efficiency" type="number" inputmode="decimal" min="50" max="100" step="1" value="90">
+          </div>
+          <div class="field">
+            <label for="margin">Supplier margin (snt/kWh)</label>
+            <input id="margin" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="0">
+          </div>
+        </div>
+      </details>
+    </form>
+
+    <section class="card" aria-labelledby="result-title">
+      <h2 id="result-title">Charging plan</h2>
+      <div id="result" aria-live="polite"><p class="muted">Loading prices...</p></div>
+    </section>
+
+    <section class="card chart" aria-labelledby="chart-title">
+      <h2 id="chart-title">Prices until you leave (snt/kWh)</h2>
+      <div id="chart"><p class="muted">No data yet.</p></div>
+      <div class="legend small muted" id="chart-legend" hidden>
+        <span><span class="swatch chosen"></span>Chosen window</span>
+        <span><span class="swatch other"></span>Other quarter-hours</span>
+      </div>
+    </section>
+
+    <footer class="muted small">
+      <p>Prices: <a href="https://spot-hinta.fi/">spot-hinta.fi</a> / <a href="https://porssisahko.net/">porssisahko.net</a> (Nord Pool day-ahead, VAT included). Tomorrow's prices usually appear around 14:00 Finnish time. <span id="data-status"></span></p>
+      <p>Cost estimates cover the energy price only, not transfer fees or electricity tax.</p>
+    </footer>
+  </main>
+  <p class="sr-only" id="copy-status" role="status"></p>
+
+  <!-- Pure logic: no DOM access, so it can be unit-tested in Node (see charger.test.js). -->
+  <script id="logic">
+    const Charger = (() => {
+      const SLOT_MS = 15 * 60 * 1000;
+      const TZ = 'Europe/Helsinki';
+      const dtf = new Intl.DateTimeFormat('en-GB', {
+        timeZone: TZ, hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+
+      function zoned(ms) {
+        const o = {};
+        for (const p of dtf.formatToParts(new Date(ms))) {
+          if (p.type !== 'literal') o[p.type] = Number(p.value);
+        }
+        return o;
+      }
+      function tzOffsetMs(ms) {
+        const z = zoned(ms);
+        return Date.UTC(z.year, z.month - 1, z.day, z.hour, z.minute, z.second) - Math.floor(ms / 1000) * 1000;
+      }
+      function zonedToUtc(y, mo, d, h, mi) {
+        const guess = Date.UTC(y, mo - 1, d, h, mi);
+        const first = guess - tzOffsetMs(guess);
+        return guess - tzOffsetMs(first);
+      }
+      /** Next moment (UTC ms) at which Helsinki wall-clock reads hh:mm, strictly after nowMs. */
+      function nextOccurrence(nowMs, hh, mm) {
+        const z = zoned(nowMs);
+        let t = zonedToUtc(z.year, z.month, z.day, hh, mm);
+        if (t <= nowMs) {
+          const n = new Date(Date.UTC(z.year, z.month - 1, z.day + 1));
+          t = zonedToUtc(n.getUTCFullYear(), n.getUTCMonth() + 1, n.getUTCDate(), hh, mm);
+        }
+        return t;
+      }
+      const pad = (n) => String(n).padStart(2, '0');
+      function formatTime(ms) {
+        const z = zoned(ms);
+        return pad(z.hour) + ':' + pad(z.minute);
+      }
+      function dayKey(ms) {
+        const z = zoned(ms);
+        return z.year * 10000 + z.month * 100 + z.day;
+      }
+      /** "today", "tomorrow" or e.g. "Fri 27 Nov" relative to nowMs (Helsinki dates). */
+      function formatDay(ms, nowMs) {
+        const k = dayKey(ms);
+        if (k === dayKey(nowMs)) return 'today';
+        const z = zoned(nowMs);
+        const tomorrow = new Date(Date.UTC(z.year, z.month - 1, z.day + 1));
+        const tk = tomorrow.getUTCFullYear() * 10000 + (tomorrow.getUTCMonth() + 1) * 100 + tomorrow.getUTCDate();
+        if (k === tk) return 'tomorrow';
+        return new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(ms));
+      }
+      const ceilQuarter = (ms) => Math.ceil(ms / SLOT_MS) * SLOT_MS;
+
+      /** Split hourly entries into four quarter-hour slots (in case a source returns hourly prices). */
+      function expandToQuarters(sorted) {
+        const out = [];
+        for (let i = 0; i < sorted.length; i++) {
+          const next = sorted[i + 1];
+          const prev = sorted[i - 1];
+          const span = next ? next.start - sorted[i].start : prev ? sorted[i].start - prev.start : SLOT_MS;
+          const parts = span >= 4 * SLOT_MS ? 4 : 1;
+          for (let k = 0; k < parts; k++) out.push({ start: sorted[i].start + k * SLOT_MS, price: sorted[i].price });
+        }
+        return out;
+      }
+
+      /**
+       * Price JSON -> ascending, de-duplicated [{ start, price }] with price in snt/kWh incl. VAT.
+       * Accepts spot-hinta.fi (array, PriceWithTax in EUR/kWh) and porssisahko.net v2 ({ prices: [...] }, snt/kWh).
+       */
+      function parsePrices(json) {
+        const raw = [];
+        if (Array.isArray(json)) {
+          for (const p of json) raw.push({ start: Date.parse(p.DateTime), price: Number(p.PriceWithTax) * 100 });
+        } else if (json && Array.isArray(json.prices)) {
+          for (const p of json.prices) raw.push({ start: Date.parse(p.startDate), price: Number(p.price) });
+        } else {
+          throw new Error('Unexpected price data format');
+        }
+        const byStart = new Map();
+        for (const p of raw) if (Number.isFinite(p.start) && Number.isFinite(p.price)) byStart.set(p.start, p);
+        const sorted = [...byStart.values()].sort((a, b) => a.start - b.start);
+        if (sorted.length === 0) throw new Error('Price data was empty');
+        return expandToQuarters(sorted);
+      }
+
+      /** Energy and number of 15-minute slots needed. efficiency is a fraction (0.9). */
+      function computeNeed({ current, target, capacityKwh, chargerKw, efficiency }) {
+        const pct = Math.max(0, target - current);
+        const kwhBattery = (pct / 100) * capacityKwh;
+        const kwhGrid = kwhBattery / efficiency;
+        const kwhPerSlot = chargerKw * 0.25;
+        const slots = kwhGrid <= 0 ? 0 : Math.ceil(kwhGrid / kwhPerSlot - 1e-9);
+        return { pct, kwhBattery, kwhGrid, kwhPerSlot, slots, hours: kwhGrid / chargerKw };
+      }
+
+      const avg = (arr) => arr.reduce((s, x) => s + x.price, 0) / arr.length;
+
+      /**
+       * Cheapest contiguous window of n slots that starts at/after the next quarter-hour
+       * and ends by readyByMs. Ties go to the later start.
+       * status: 'none' | 'no-prices' | 'ok' | 'insufficient'
+       */
+      function findWindow({ prices, n, nowMs, readyByMs }) {
+        const earliest = ceilQuarter(nowMs);
+        const candidates = prices.filter((s) => s.start >= earliest && s.start + SLOT_MS <= readyByMs);
+        const coverageEnd = prices.length ? prices[prices.length - 1].start + SLOT_MS : 0;
+        const base = {
+          candidates,
+          partialData: coverageEnd < readyByMs,
+          coverageEnd,
+          allAvg: candidates.length ? avg(candidates) : null
+        };
+        if (n <= 0) return { ...base, status: 'none' };
+        if (candidates.length === 0) return { ...base, status: 'no-prices' };
+
+        let bestIdx = -1;
+        let bestSum = Infinity;
+        let windowSum = 0;
+        for (let i = 0; i < candidates.length; i++) {
+          windowSum += candidates[i].price;
+          if (i >= n) windowSum -= candidates[i - n].price;
+          if (i >= n - 1) {
+            const first = i - n + 1;
+            const contiguous = candidates[i].start - candidates[first].start === (n - 1) * SLOT_MS;
+            if (contiguous && windowSum <= bestSum + 1e-9) {
+              bestSum = windowSum;
+              bestIdx = first;
+            }
+          }
+        }
+
+        if (bestIdx >= 0) {
+          const win = candidates.slice(bestIdx, bestIdx + n);
+          const immediate = candidates.slice(0, n);
+          const immediateOk = immediate.length === n &&
+            immediate[n - 1].start - immediate[0].start === (n - 1) * SLOT_MS;
+          return {
+            ...base,
+            status: 'ok',
+            window: win,
+            startMs: win[0].start,
+            endMs: win[n - 1].start + SLOT_MS,
+            avgPrice: avg(win),
+            immediateAvg: immediateOk ? avg(immediate) : null
+          };
+        }
+
+        // Not enough contiguous time: take the longest contiguous run (earliest on ties).
+        let runStart = 0;
+        let best = { from: 0, len: 1 };
+        for (let i = 1; i <= candidates.length; i++) {
+          const broken = i === candidates.length || candidates[i].start - candidates[i - 1].start !== SLOT_MS;
+          if (broken) {
+            if (i - runStart > best.len) best = { from: runStart, len: i - runStart };
+            runStart = i;
+          }
+        }
+        const win = candidates.slice(best.from, best.from + best.len);
+        return {
+          ...base,
+          status: 'insufficient',
+          window: win,
+          maxSlots: best.len,
+          startMs: win[0].start,
+          endMs: win[win.length - 1].start + SLOT_MS,
+          avgPrice: avg(win)
+        };
+      }
+
+      /** Battery % reachable when charging for the given number of slots. */
+      function reachablePercent({ current, slots, kwhPerSlot, capacityKwh, efficiency }) {
+        return Math.min(100, current + ((slots * kwhPerSlot * efficiency) / capacityKwh) * 100);
+      }
+
+      return {
+        SLOT_MS, TZ, zoned, zonedToUtc, nextOccurrence, formatTime, formatDay, ceilQuarter,
+        parsePrices, computeNeed, findWindow, reachablePercent
+      };
+    })();
+  </script>
+
+  <script id="app">
+    (() => {
+      // porssisahko.net sends no CORS headers, so browsers block it; spot-hinta.fi serves the same
+      // Nord Pool prices (incl. VAT) with CORS enabled. porssisahko.net stays as a fallback.
+      const API_URLS = [
+        'https://api.spot-hinta.fi/TodayAndDayForward',
+        'https://api.porssisahko.net/v2/latest-prices.json'
+      ];
+      const STORAGE_KEY = 'tesla-spot-charger:v1';
+      const $ = (id) => document.getElementById(id);
+      const fields = ['current', 'target', 'ready', 'capacity', 'charger', 'efficiency', 'margin'];
+
+      let prices = null;
+      let loadError = null;
+      let loading = true;
+
+      // ---------- persistence ----------
+      function saveSettings() {
+        try {
+          const data = {};
+          for (const f of fields) data[f] = $(f).value;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) { /* storage unavailable (private mode): ignore */ }
+      }
+      function loadSettings() {
+        try {
+          const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          for (const f of fields) if (typeof data[f] === 'string' && data[f] !== '') $(f).value = data[f];
+        } catch (e) { /* ignore corrupt storage */ }
+        $('current-range').value = $('current').value;
+        $('target-range').value = $('target').value;
+      }
+
+      // ---------- helpers ----------
+      const fmt = (n, d = 2) => n.toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d });
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      function fmtDuration(hours) {
+        const totalMin = Math.round(hours * 60);
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        return h > 0 ? h + ' h ' + m + ' min' : m + ' min';
+      }
+      function readInputs() {
+        const num = (id) => parseFloat($(id).value);
+        const [hh, mm] = ($('ready').value || '').split(':').map(Number);
+        return {
+          current: num('current'),
+          target: num('target'),
+          capacityKwh: num('capacity'),
+          chargerKw: num('charger'),
+          efficiencyPct: num('efficiency'),
+          margin: num('margin') || 0,
+          hh, mm
+        };
+      }
+      function validate(i) {
+        const ok = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
+        if (!ok(i.current, 0, 100)) return 'Enter a current battery level between 0 and 100%.';
+        if (!ok(i.target, 1, 100)) return 'Enter a target battery level between 1 and 100%.';
+        if (!Number.isFinite(i.hh) || !Number.isFinite(i.mm)) return 'Choose the time you need the car ready.';
+        if (!ok(i.capacityKwh, 10, 150)) return 'Usable battery must be between 10 and 150 kWh.';
+        if (!ok(i.chargerKw, 1, 22)) return 'Charger power must be between 1 and 22 kW.';
+        if (!ok(i.efficiencyPct, 50, 100)) return 'Charging efficiency must be between 50 and 100%.';
+        return null;
+      }
+
+      // ---------- rendering ----------
+      function banner(kind, html) { return '<div class="banner ' + kind + '">' + html + '</div>'; }
+
+      function timeTile(label, ms, nowMs, copyId) {
+        const t = Charger.formatTime(ms);
+        return '<div class="time-tile">' +
+          '<span class="label">' + label + '</span>' +
+          '<span class="value" id="' + copyId + '">' + t + '</span>' +
+          '<span class="day">' + esc(Charger.formatDay(ms, nowMs)) + '</span>' +
+          '<button type="button" data-copy="' + t + '" data-label="' + label.toLowerCase() + '">Copy ' + label.toLowerCase() + '</button>' +
+          '</div>';
+      }
+
+      function render() {
+        const result = $('result');
+        const nowMs = Date.now();
+        const inputs = readInputs();
+
+        if (loading) { result.innerHTML = '<p class="muted">Loading prices...</p>'; renderChart(null); return; }
+        if (loadError) {
+          result.innerHTML = banner('err', '<strong>Could not load prices.</strong> ' + esc(loadError)) +
+            '<p><button type="button" class="primary" id="retry">Retry</button></p>';
+          renderChart(null);
+          return;
+        }
+
+        const problem = validate(inputs);
+        if (problem) { result.innerHTML = banner('warn', esc(problem)); renderChart(null); return; }
+
+        const readyByMs = Charger.nextOccurrence(nowMs, inputs.hh, inputs.mm);
+        $('ready-hint').textContent = 'Next ' + Charger.formatTime(readyByMs) + ' (' + Charger.formatDay(readyByMs, nowMs) + ')';
+
+        if (inputs.target <= inputs.current) {
+          result.innerHTML = banner('ok', '<strong>No charging needed.</strong> The battery is already at or above the ' + inputs.target + '% target.');
+          renderChart(null);
+          return;
+        }
+
+        const efficiency = inputs.efficiencyPct / 100;
+        const need = Charger.computeNeed({
+          current: inputs.current, target: inputs.target,
+          capacityKwh: inputs.capacityKwh, chargerKw: inputs.chargerKw, efficiency
+        });
+        const plan = Charger.findWindow({ prices, n: need.slots, nowMs, readyByMs });
+
+        let html = '';
+
+        if (plan.status === 'no-prices') {
+          const upcoming = prices[prices.length - 1].start + Charger.SLOT_MS;
+          html = banner('warn', '<strong>No prices cover the time before ' + Charger.formatTime(readyByMs) + ' (' + esc(Charger.formatDay(readyByMs, nowMs)) + ') yet.</strong> ' +
+            'Known prices end ' + Charger.formatTime(upcoming) + ' (' + esc(Charger.formatDay(upcoming, nowMs)) + '). Tomorrow\'s prices are usually published around 14:00 Finnish time, so check again then.');
+          result.innerHTML = html + '<p class="small muted">Energy needed: ' + fmt(need.kwhGrid, 1) + ' kWh, about ' + fmtDuration(need.hours) + ' of charging.</p>';
+          renderChart(null);
+          return;
+        }
+
+        if (plan.partialData) {
+          html += banner('warn', '<strong>Provisional.</strong> Prices only cover until ' + Charger.formatTime(plan.coverageEnd) + ' (' + esc(Charger.formatDay(plan.coverageEnd, nowMs)) +
+            '). Tomorrow\'s prices are usually published around 14:00 Finnish time. Check again after they appear.');
+        }
+
+        if (plan.status === 'insufficient') {
+          const reach = Charger.reachablePercent({
+            current: inputs.current, slots: plan.maxSlots, kwhPerSlot: need.kwhPerSlot,
+            capacityKwh: inputs.capacityKwh, efficiency
+          });
+          html += banner('err', '<strong>Cannot reach ' + inputs.target + '% by ' + Charger.formatTime(readyByMs) + '.</strong> ' +
+            'You need about ' + fmtDuration(need.hours) + ' of charging, but only ' + fmtDuration(plan.maxSlots * 0.25) + ' of priced time is available. ' +
+            'Charging for all of it gets you to about ' + Math.floor(reach) + '%.');
+        } else {
+          html += banner('ok', 'Charge <strong>' + inputs.current + '% to ' + inputs.target + '%</strong> in about ' + fmtDuration(need.hours) +
+            ' (' + fmt(need.kwhGrid, 1) + ' kWh from the grid, ' + need.slots + ' quarter-hours).');
+        }
+
+        html += '<div class="times">' +
+          timeTile('Start', plan.startMs, nowMs, 'start-time') +
+          timeTile('End', plan.endMs, nowMs, 'end-time') +
+          '</div>';
+
+        const energyForCost = plan.status === 'ok' ? need.kwhGrid : Math.min(need.kwhGrid, plan.window.length * need.kwhPerSlot);
+        const costEur = (energyForCost * (plan.avgPrice + inputs.margin)) / 100;
+        let stats = '<div><dt>Average price</dt><dd>' + fmt(plan.avgPrice) + ' snt/kWh</dd></div>' +
+          '<div><dt>Estimated cost</dt><dd>' + fmt(costEur) + ' EUR</dd></div>' +
+          '<div><dt>Window vs average until departure</dt><dd>' + fmt(plan.avgPrice) + ' vs ' + fmt(plan.allAvg) + ' snt/kWh</dd></div>';
+        if (plan.status === 'ok') {
+          const vsAvg = ((plan.allAvg - plan.avgPrice) * need.kwhGrid) / 100;
+          stats += '<div><dt>Saving vs average price</dt><dd>' + fmt(vsAvg) + ' EUR</dd></div>';
+          if (plan.immediateAvg !== null) {
+            const vsNow = ((plan.immediateAvg - plan.avgPrice) * need.kwhGrid) / 100;
+            stats += '<div><dt>Saving vs charging right away</dt><dd>' + fmt(vsNow) + ' EUR</dd></div>';
+          }
+        }
+        html += '<dl class="stats">' + stats + '</dl>';
+
+        html += '<ol class="steps small">' +
+          '<li>In the Tesla app open <strong>Charging</strong> and then <strong>Schedule</strong>.</li>' +
+          '<li>Turn on scheduled charging and set the start time to <strong>' + Charger.formatTime(plan.startMs) + '</strong> and the end time to <strong>' + Charger.formatTime(plan.endMs) + '</strong>.</li>' +
+          '<li>Set the charge limit to <strong>' + inputs.target + '%</strong> so the car stops at the target even if the window runs a little long.</li>' +
+          '</ol>';
+
+        result.innerHTML = html;
+        renderChart(plan);
+      }
+
+      function renderChart(plan) {
+        const el = $('chart');
+        const legend = $('chart-legend');
+        if (!plan || !plan.candidates || plan.candidates.length === 0) {
+          el.innerHTML = '<p class="muted">Nothing to show yet.</p>';
+          legend.hidden = true;
+          return;
+        }
+        const slots = plan.candidates;
+        const chosen = new Set((plan.window || []).map((s) => s.start));
+        const W = 600, H = 150, top = 16, bottom = 22, left = 0;
+        const innerH = H - top - bottom;
+        const vals = slots.map((s) => s.price);
+        const lo = Math.min(0, ...vals);
+        const hi = Math.max(0.1, ...vals);
+        const y = (v) => top + ((hi - v) / (hi - lo)) * innerH;
+        const y0 = y(0);
+        const bw = (W - left) / slots.length;
+        let svg = '';
+        slots.forEach((s, i) => {
+          const yy = y(s.price);
+          const h = Math.max(1, Math.abs(yy - y0));
+          const yTop = Math.min(yy, y0);
+          const cls = chosen.has(s.start) ? 'bar chosen' : 'bar';
+          svg += '<rect class="' + cls + '" x="' + (left + i * bw + 0.5).toFixed(2) + '" y="' + yTop.toFixed(2) +
+            '" width="' + Math.max(1, bw - 1).toFixed(2) + '" height="' + h.toFixed(2) + '"><title>' +
+            Charger.formatTime(s.start) + ': ' + fmt(s.price) + ' snt/kWh</title></rect>';
+        });
+        svg += '<line class="zero" x1="0" x2="' + W + '" y1="' + y0.toFixed(2) + '" y2="' + y0.toFixed(2) + '"></line>';
+
+        const spanHours = slots.length / 4;
+        const step = spanHours > 12 ? 3 : spanHours > 6 ? 2 : 1;
+        slots.forEach((s, i) => {
+          const z = Charger.zoned(s.start);
+          if (z.minute === 0 && z.hour % step === 0) {
+            svg += '<text class="axis" x="' + (left + i * bw).toFixed(2) + '" y="' + (H - 6) + '">' + Charger.formatTime(s.start) + '</text>';
+          }
+        });
+        svg += '<text class="axis" x="0" y="11">max ' + fmt(Math.max(...vals)) + '</text>';
+
+        const winText = plan.window && plan.window.length
+          ? ' Chosen window ' + Charger.formatTime(plan.startMs) + ' to ' + Charger.formatTime(plan.endMs) + '.'
+          : '';
+        const label = 'Bar chart of ' + slots.length + ' quarter-hour prices from ' + Charger.formatTime(slots[0].start) +
+          ' to ' + Charger.formatTime(slots[slots.length - 1].start + Charger.SLOT_MS) + ', ranging ' + fmt(Math.min(...vals)) + ' to ' + fmt(Math.max(...vals)) + ' snt/kWh.' + winText;
+        el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">' + svg + '</svg>';
+        legend.hidden = !(plan.window && plan.window.length);
+      }
+
+      // ---------- data ----------
+      async function loadPrices() {
+        loading = true;
+        loadError = null;
+        render();
+        try {
+          let lastError = null;
+          prices = null;
+          for (const url of API_URLS) {
+            try {
+              const res = await fetch(url, { cache: 'no-store' });
+              if (!res.ok) throw new Error('Price service answered ' + res.status + '.');
+              prices = Charger.parsePrices(await res.json());
+              break;
+            } catch (err) { lastError = err; }
+          }
+          if (!prices) throw lastError || new Error('No price source available.');
+          const last = prices[prices.length - 1].start + Charger.SLOT_MS;
+          $('data-status').textContent = 'Loaded ' + prices.length + ' prices, valid until ' +
+            Charger.formatTime(last) + ' (' + Charger.formatDay(last, Date.now()) + ').';
+        } catch (e) {
+          prices = null;
+          loadError = (e && e.message ? e.message : 'Network error.') + ' Check your connection and try again.';
+          $('data-status').textContent = '';
+        } finally {
+          loading = false;
+          render();
+        }
+      }
+
+      // ---------- events ----------
+      function link(numberId, rangeId) {
+        const n = $(numberId), r = $(rangeId);
+        r.addEventListener('input', () => { n.value = r.value; onChange(); });
+        n.addEventListener('input', () => {
+          const v = parseFloat(n.value);
+          if (Number.isFinite(v)) r.value = Math.min(100, Math.max(0, v));
+          onChange();
+        });
+      }
+      function onChange() { saveSettings(); if (prices || loadError) render(); }
+
+      loadSettings();
+      link('current', 'current-range');
+      link('target', 'target-range');
+      for (const f of ['ready', 'capacity', 'charger', 'efficiency', 'margin']) $(f).addEventListener('input', onChange);
+      $('form').addEventListener('submit', (e) => e.preventDefault());
+
+      $('result').addEventListener('click', async (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        if (btn.id === 'retry') { loadPrices(); return; }
+        const text = btn.dataset.copy;
+        if (!text) return;
+        let ok = false;
+        try { await navigator.clipboard.writeText(text); ok = true; } catch (err) {
+          const ta = document.createElement('textarea');
+          ta.value = text; document.body.appendChild(ta); ta.select();
+          try { ok = document.execCommand('copy'); } catch (err2) { ok = false; }
+          ta.remove();
+        }
+        $('copy-status').textContent = ok ? 'Copied ' + btn.dataset.label + ' time ' + text : 'Copy failed. Select the time manually.';
+      });
+
+      // Keep "now" fresh so the plan never starts in the past.
+      setInterval(() => { if (prices && !document.hidden) render(); }, 60000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden && prices) render(); });
+
+      loadPrices();
+    })();
+  </script>
+</body>
+</html>
